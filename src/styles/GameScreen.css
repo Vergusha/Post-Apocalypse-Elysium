@@ -64,6 +64,10 @@
   background-color: #d4a017;
 }
 
+.stat-value.thirst {
+  background-color: #4287f5;
+}
+
 .stat-value.radiation {
   background-color: #7e429b;
 }

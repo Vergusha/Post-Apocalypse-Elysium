@@ -96,7 +96,7 @@ const gameItems: Record<string, LootItem> = {
   'antibiotics': {
     id: 'antibiotics',
     name: 'Антибиотики',
-    description: 'Лечат инфекционные заболевания и снижают радиацию.',
+    description: 'Лечат инфекционные заболевания и снижают радиацию на 20%.',
     category: 'medical',
     rarity: 3,
     weight: 0.5,
@@ -106,7 +106,7 @@ const gameItems: Record<string, LootItem> = {
   'canned-meat': {
     id: 'canned-meat',
     name: 'Тушенка',
-    description: 'Консервированное мясо. Снижает голод на 30%.',
+    description: 'Консервированное мясо. Уменьшает голод на 30%.',
     category: 'food',
     rarity: 1,
     weight: 1,
@@ -116,7 +116,7 @@ const gameItems: Record<string, LootItem> = {
   'water': {
     id: 'water',
     name: 'Вода',
-    description: 'Очищенная вода. Снижает голод на 15%.',
+    description: 'Очищенная вода. Снижает жажду на 40%.',
     category: 'food',
     rarity: 1,
     weight: 1,
@@ -126,7 +126,7 @@ const gameItems: Record<string, LootItem> = {
   'dried-fruits': {
     id: 'dried-fruits',
     name: 'Сухофрукты',
-    description: 'Сушеные фрукты. Снижают голод на 20% и дают энергию.',
+    description: 'Сушеные фрукты. Уменьшают голод на 20% и дают энергию.',
     category: 'food',
     rarity: 2,
     weight: 0.5,

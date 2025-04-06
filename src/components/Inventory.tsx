@@ -19,6 +19,11 @@ const Inventory = ({ onClose }: InventoryProps) => {
   const [showQuantitySelector, setShowQuantitySelector] = useState(false);
   const [quantitySelectorAction, setQuantitySelectorAction] = useState<'use' | 'drop'>('use');
 
+  const { 
+    eat, 
+    drink 
+  } = usePlayerStore();
+
   // Get the selected item details
   const selectedInventoryItem = inventory.find(item => item.id === selectedItemId);
   const selectedItem = selectedInventoryItem ? items[selectedInventoryItem.id] : null;
@@ -64,12 +69,53 @@ const Inventory = ({ onClose }: InventoryProps) => {
         setShowQuantitySelector(true);
       } else {
         // Use single item directly
-        removeItem(selectedItemId, 1);
+        consumeItem(selectedItemId, 1);
         setSelectedItemId(null);
       }
     }
   };
 
+  // New function to handle consuming items
+  const consumeItem = (itemId: string, quantity: number) => {
+    const item = items[itemId];
+    if (!item) return;
+    
+    // Apply effect based on item type
+    switch(itemId) {
+      // Food items
+      case 'canned-meat':
+        eat(30 * quantity);
+        break;
+      case 'dried-fruits':
+        eat(20 * quantity);
+        break;
+      // Water items
+      case 'water':
+        drink(40 * quantity);
+        break;
+      // Medical items
+      case 'medkit':
+        usePlayerStore.getState().takeDamage(-40 * quantity); // Heal
+        break;
+      case 'bandage':
+        usePlayerStore.getState().takeDamage(-15 * quantity); // Heal
+        break;
+      case 'antibiotics':
+        usePlayerStore.getState().takeDamage(-10 * quantity); // Heal and reduce radiation
+        const radiation = usePlayerStore.getState().radiation;
+        if (radiation > 0) {
+          // Reduce radiation by 20%
+          usePlayerStore.setState({ radiation: Math.max(0, radiation - 20 * quantity) });
+        }
+        break;
+      default:
+        console.log(`Using item: ${item.name}`);
+    }
+    
+    // Remove consumed items from inventory
+    removeItem(itemId, quantity);
+  };
+  
   const handleDropItem = () => {
     if (selectedItemId) {
       const inventoryItem = inventory.find(item => item.id === selectedItemId);
@@ -90,12 +136,10 @@ const Inventory = ({ onClose }: InventoryProps) => {
     
     // Perform the action with the selected quantity
     if (quantitySelectorAction === 'use') {
-      // In a real game, this would have different effects based on the item
-      console.log(`Using ${quantity} of ${selectedItem?.name}`);
+      consumeItem(selectedItemId, quantity);
+    } else if (quantitySelectorAction === 'drop') {
+      removeItem(selectedItemId, quantity);
     }
-    
-    // Remove the items from inventory
-    removeItem(selectedItemId, quantity);
     
     // Close the selector and clear selection
     setShowQuantitySelector(false);

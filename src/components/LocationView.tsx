@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTimeStore } from '../store/timeStore';
 import { usePlayerStore } from '../store/playerStore';
 import { useLootStore, LootItem } from '../store/lootStore';
 import QuantitySelector from './QuantitySelector';
@@ -15,10 +14,16 @@ interface LocationViewProps {
   onOpenMap: () => void;
   onOpenInventory: () => void;
   isInShelter: boolean;
+  onAdvanceTime: (minutes: number) => void; // Add this prop
 }
 
-const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: LocationViewProps) => {
-  const { advanceTime } = useTimeStore();
+const LocationView = ({ 
+  location, 
+  onOpenMap, 
+  onOpenInventory, 
+  isInShelter,
+  onAdvanceTime
+}: LocationViewProps) => {
   const { locationInventories, generateLoot, removeItemFromLocation, moveItemToPlayer } = useLootStore();
   
   const [showLoot, setShowLoot] = useState(false);
@@ -39,7 +44,7 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
   
   // Handle search action
   const handleSearch = () => {
-    advanceTime(30); // 30 minutes
+    onAdvanceTime(30); // Use the prop instead of directly accessing advanceTime
     const searchEfficiency = 1.0;
     const foundItems = generateLoot(location.id, location.type, searchEfficiency);
     
@@ -258,7 +263,7 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
           <>
             <button 
               className="game-button"
-              onClick={() => advanceTime(8 * 60)} // Rest for 8 hours
+              onClick={() => onAdvanceTime(8 * 60)} // Use the prop for advancing time
             >
               Отдохнуть (8 часов)
             </button>

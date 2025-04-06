@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePlayerStore } from '../store/playerStore';
+import { usePlayerStore, SURVIVAL_RATES } from '../store/playerStore';
 import { useLocationStore } from '../store/locationStore';
 import { useTimeStore, formatTime, formatDayTime } from '../store/timeStore';
 import Map from '../components/Map';
@@ -8,7 +8,15 @@ import LocationView from '../components/LocationView';
 import '../styles/GameScreen.css';
 
 const GameScreen = () => {
-  const player = usePlayerStore();
+  const { 
+    health, 
+    hunger, 
+    thirst, 
+    radiation, 
+    increaseHunger, 
+    increaseThirst, 
+    takeDamage 
+  } = usePlayerStore();
   const { locations, currentLocationId, setCurrentLocation } = useLocationStore();
   const [showMap, setShowMap] = useState(false);
   const [showInventory, setShowInventory] = useState(false);
@@ -30,20 +38,28 @@ const GameScreen = () => {
   
   const isInShelter = currentLocationId === 'home';
 
-  // Real-time clock that advances game time
+  // Handle real-time game updates
   useEffect(() => {
-    const gameTimeInterval = setInterval(() => {
+    const gameUpdateInterval = setInterval(() => {
       if (!paused) {
-        // Advance 10 minutes every real-time minute (adjust as needed)
-        advanceTime(1);
+        // Apply hunger and thirst effects based on time
+        increaseHunger(SURVIVAL_RATES.HUNGER_PER_MINUTE);
+        increaseThirst(SURVIVAL_RATES.THIRST_PER_MINUTE);
+        
+        // Apply health damage if hunger or thirst are critical
+        if (hunger > SURVIVAL_RATES.HEALTH_LOSS_THRESHOLD || 
+            thirst > SURVIVAL_RATES.HEALTH_LOSS_THRESHOLD) {
+          takeDamage(SURVIVAL_RATES.HEALTH_LOSS_RATE);
+        }
       }
-    }, 6000); // 6 seconds = 1 game minute (real time)
+    }, 6000); // 6 seconds = 1 game minute
     
-    return () => clearInterval(gameTimeInterval);
-  }, [paused, advanceTime]);
+    return () => clearInterval(gameUpdateInterval);
+  }, [paused, hunger, thirst, increaseHunger, increaseThirst, takeDamage]);
 
+  // Handle location selection and travel costs
   const handleLocationSelect = (locationId: string) => {
-    // Time cost for travel between locations (example implementation)
+    // Time cost for travel between locations
     const startLoc = locations.find(loc => loc.id === currentLocationId);
     const endLoc = locations.find(loc => loc.id === locationId);
     
@@ -53,11 +69,14 @@ const GameScreen = () => {
         Math.pow(startLoc.x - endLoc.x, 2) + Math.pow(startLoc.y - endLoc.y, 2)
       );
       
-      // Convert distance to time (minutes)
+      // Convert distance to time and survival costs
       const travelTime = Math.round(distance * 5); // 5 minutes per distance unit
+      const travelDistanceKm = distance * 0.5; // Approximate kilometers
       
-      // Advance game time
+      // Apply travel costs
       advanceTime(travelTime);
+      increaseHunger(travelDistanceKm * SURVIVAL_RATES.HUNGER_PER_KM);
+      increaseThirst(travelDistanceKm * SURVIVAL_RATES.THIRST_PER_KM);
     }
     
     setCurrentLocation(locationId);
@@ -74,34 +93,56 @@ const GameScreen = () => {
     }
   };
   
+  // Handle advancing time with survival costs
+  const handleAdvanceTime = (minutes: number) => {
+    advanceTime(minutes);
+    
+    // Apply survival costs for the time passed
+    increaseHunger(minutes * SURVIVAL_RATES.HUNGER_PER_MINUTE);
+    increaseThirst(minutes * SURVIVAL_RATES.THIRST_PER_MINUTE);
+  };
+  
   return (
     <div className="game-screen">
       {/* Верхняя панель с характеристиками игрока */}
       <div className="top-stats-bar">
-        <div className="player-name">{player.name}</div>
+        <div className="player-name">{usePlayerStore(state => state.name)}</div>
         <div className="stats-container">
           <div className="stat-bar">
             <div className="stat-label">
               <span>Здоровье:</span>
-              <span>{player.health}%</span>
+              <span>{health}%</span>
             </div>
             <div className="stat-value-wrapper">
               <div 
                 className="stat-value health" 
-                style={{ width: `${player.health}%` }}
+                style={{ width: `${health}%` }}
               ></div>
             </div>
           </div>
           
           <div className="stat-bar">
             <div className="stat-label">
-              <span>Голод:</span>
-              <span>{player.hunger}%</span>
+              <span>Сытость:</span>
+              <span>{100 - hunger}%</span>
             </div>
             <div className="stat-value-wrapper">
               <div 
                 className="stat-value hunger" 
-                style={{ width: `${player.hunger}%` }}
+                style={{ width: `${100 - hunger}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="stat-bar">
+            <div className="stat-label">
+              <span>Жажда:</span>
+              <span>{100 - thirst}%</span>
+            </div>
+            <div className="stat-value-wrapper">
+              <div 
+                className="stat-value thirst" 
+                style={{ width: `${100 - thirst}%` }}
               ></div>
             </div>
           </div>
@@ -109,19 +150,19 @@ const GameScreen = () => {
           <div className="stat-bar">
             <div className="stat-label">
               <span>Радиация:</span>
-              <span>{player.radiation}%</span>
+              <span>{radiation}%</span>
             </div>
             <div className="stat-value-wrapper">
               <div 
                 className="stat-value radiation" 
-                style={{ width: `${player.radiation}%` }}
+                style={{ width: `${radiation}%` }}
               ></div>
             </div>
           </div>
         </div>
         
         {/* Time display */}
-        <div className="time-display" onClick={togglePause}>
+        <div className="time-display" onClick={() => useTimeStore.getState().togglePause()}>
           <div className="time-icon">⏱️</div>
           <div className="time-text">
             <div className="time-value">{formatTime(hour, minute)}</div>
@@ -159,6 +200,7 @@ const GameScreen = () => {
             onOpenMap={() => setShowMap(true)}
             onOpenInventory={() => setShowInventory(true)}
             isInShelter={isInShelter}
+            onAdvanceTime={handleAdvanceTime}
           />
         )}
       </div>
