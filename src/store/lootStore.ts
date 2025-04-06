@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { usePlayerStore } from './playerStore';
 
 // Types for our items
 export type ItemCategory = 
@@ -18,6 +19,7 @@ export interface LootItem {
   rarity: number; // 1-5, with 5 being the rarest
   weight: number; // For inventory management
   usable: boolean; // Can be used directly
+  stackable?: boolean; // Can stack multiple in one inventory slot
   condition?: number; // 0-100%, only for applicable items
 }
 
@@ -56,6 +58,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 2,
     weight: 2,
     usable: false,
+    stackable: false,
     condition: 60,
   },
   'rifle': {
@@ -66,88 +69,98 @@ const gameItems: Record<string, LootItem> = {
     rarity: 3,
     weight: 5,
     usable: false,
+    stackable: false,
     condition: 45,
   },
   'medkit': {
     id: 'medkit',
     name: 'Медицинский набор',
-    description: 'Базовый медицинский набор. Восстанавливает здоровье.',
+    description: 'Базовый медицинский набор. Восстанавливает 40% здоровья.',
     category: 'medical',
     rarity: 2,
     weight: 1,
     usable: true,
+    stackable: true,
   },
   'bandage': {
     id: 'bandage',
     name: 'Бинт',
-    description: 'Стерильный бинт. Останавливает кровотечение.',
+    description: 'Стерильный бинт. Восстанавливает 15% здоровья.',
     category: 'medical',
     rarity: 1,
     weight: 0.2,
     usable: true,
+    stackable: true,
   },
   'antibiotics': {
     id: 'antibiotics',
     name: 'Антибиотики',
-    description: 'Лечат инфекционные заболевания.',
+    description: 'Лечат инфекционные заболевания и снижают радиацию.',
     category: 'medical',
     rarity: 3,
     weight: 0.5,
     usable: true,
+    stackable: true,
   },
   'canned-meat': {
     id: 'canned-meat',
     name: 'Тушенка',
-    description: 'Консервированное мясо. Утоляет голод и дает силы.',
+    description: 'Консервированное мясо. Снижает голод на 30%.',
     category: 'food',
     rarity: 1,
     weight: 1,
     usable: true,
+    stackable: true,
   },
   'water': {
     id: 'water',
     name: 'Вода',
-    description: 'Очищенная вода. Необходима для выживания.',
+    description: 'Очищенная вода. Снижает голод на 15%.',
     category: 'food',
     rarity: 1,
     weight: 1,
     usable: true,
+    stackable: true,
   },
   'dried-fruits': {
     id: 'dried-fruits',
     name: 'Сухофрукты',
-    description: 'Сушеные фрукты. Хорошо сохраняются, содержат полезные вещества.',
+    description: 'Сушеные фрукты. Снижают голод на 20% и дают энергию.',
     category: 'food',
     rarity: 2,
     weight: 0.5,
     usable: true,
+    stackable: true,
   },
   'pistol-ammo': {
     id: 'pistol-ammo',
     name: 'Патроны для пистолета',
-    description: 'Патроны для пистолета. 9мм.',
+    description: 'Патроны для пистолета, калибр 9мм.',
     category: 'ammo',
     rarity: 2,
     weight: 0.5,
     usable: false,
+    stackable: true,
   },
   'rifle-ammo': {
     id: 'rifle-ammo',
     name: 'Патроны для винтовки',
-    description: 'Патроны для винтовки. 5.56мм.',
+    description: 'Патроны для винтовки, калибр 5.56мм.',
     category: 'ammo',
     rarity: 3,
     weight: 0.5,
     usable: false,
+    stackable: true,
   },
   'flashlight': {
     id: 'flashlight',
     name: 'Фонарик',
-    description: 'Фонарик. Помогает видеть в темных местах.',
+    description: 'Фонарик. Помогает видеть в темных местах и находить более ценные предметы.',
     category: 'tool',
     rarity: 2,
     weight: 0.5,
     usable: true,
+    stackable: false,
     condition: 70,
   },
   'toolkit': {
@@ -158,6 +171,8 @@ const gameItems: Record<string, LootItem> = {
     rarity: 3,
     weight: 3,
     usable: false,
+    stackable: false,
+    condition: 100,
   },
   'jacket': {
     id: 'jacket',
@@ -167,6 +182,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 2,
     weight: 2,
     usable: false,
+    stackable: false,
     condition: 50,
   },
   'gas-mask': {
@@ -177,6 +193,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 4,
     weight: 1,
     usable: false,
+    stackable: false,
     condition: 40,
   },
   'cigarettes': {
@@ -187,6 +204,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 1,
     weight: 0.1,
     usable: true,
+    stackable: true,
   },
   'radio': {
     id: 'radio',
@@ -196,6 +214,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 3,
     weight: 1,
     usable: true,
+    stackable: false,
     condition: 60,
   },
   'fuel': {
@@ -206,6 +225,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 2,
     weight: 5,
     usable: false,
+    stackable: true,
   },
   'batteries': {
     id: 'batteries',
@@ -215,6 +235,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 2,
     weight: 0.2,
     usable: false,
+    stackable: true,
   },
   'map-fragment': {
     id: 'map-fragment',
@@ -224,6 +245,7 @@ const gameItems: Record<string, LootItem> = {
     rarity: 4,
     weight: 0.1,
     usable: true,
+    stackable: true,
   },
 };
 
@@ -290,9 +312,9 @@ export const useLootStore = create<LootState>((set, get) => ({
   
   moveItemToPlayer: (locationId, itemId) => {
     const { removeItemFromLocation } = get();
+    const addItem = usePlayerStore.getState().addItem;
     
-    // We'll need to integrate with playerStore later
-    // For now just remove it from location
+    addItem(itemId);
     removeItemFromLocation(locationId, itemId);
   },
   
@@ -333,18 +355,23 @@ export const useLootStore = create<LootState>((set, get) => ({
       if (itemId) {
         const item = items[itemId];
         if (item) {
+          // Create a unique instance ID for this specific item (for non-stackable items)
+          const instanceId = !item.stackable ? `${itemId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` : itemId;
+          
           // Add variation to condition if applicable
           if (item.condition !== undefined) {
             const conditionVariance = Math.floor(Math.random() * 30) - 15; // +/- 15%
             const newItem = { 
               ...item, 
+              id: instanceId,
               condition: Math.max(5, Math.min(100, item.condition + conditionVariance))
             };
             foundItems.push(newItem);
             addItemToLocation(locationId, newItem.id);
           } else {
-            foundItems.push(item);
-            addItemToLocation(locationId, itemId);
+            const newItem = item.stackable ? item : { ...item, id: instanceId };
+            foundItems.push(newItem);
+            addItemToLocation(locationId, newItem.id);
           }
         }
       }

@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -12,6 +13,7 @@
   padding: 10px 20px;
   border-bottom: 1px solid #444;
   height: 60px;
+  width: 100%;
 }
 
 .player-name {
@@ -26,6 +28,7 @@
   display: flex;
   flex: 1;
   gap: 20px;
+  max-width: 600px;
 }
 
 .stat-bar {
@@ -117,6 +120,7 @@
   position: relative;
   overflow: hidden;
   display: flex;
+  width: 100%; /* Ensure full width */
 }
 
 .sidebar {
@@ -190,4 +194,44 @@
 .game-button:hover {
   background-color: rgba(80, 80, 80, 0.8);
   box-shadow: 0 0 10px rgba(255, 126, 0, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .player-name {
+    min-width: 80px;
+    font-size: 1rem;
+  }
+  
+  .stats-container {
+    gap: 10px;
+  }
+  
+  .top-stats-bar {
+    padding: 10px;
+    height: auto;
+    flex-wrap: wrap;
+  }
+  
+  .time-display {
+    margin-left: 0;
+    margin-top: 5px;
+    width: 100%;
+  }
+  
+  .game-button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    margin-right: 5px;
+    margin-bottom: 5px;
+  }
+}
+
+/* For larger screens */
+@media (min-width: 1200px) {
+  .game-area {
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
 }

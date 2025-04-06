@@ -200,6 +200,7 @@
   padding: 10px;
   border-radius: 5px;
   z-index: 20;
+  max-width: 200px;
 }
 
 .map-legend h3 {
@@ -248,4 +249,61 @@
   100% {
     box-shadow: 0 0 0 0 rgba(255, 126, 0, 0);
   }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .location-marker {
+    width: 15px;
+    height: 15px;
+  }
+  
+  .location-marker::after {
+    width: 7px;
+    height: 7px;
+  }
+  
+  .location-marker.current {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .map-legend {
+    max-width: 150px;
+    padding: 5px;
+  }
+  
+  .map-legend h3 {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+  
+  .legend-item {
+    margin-bottom: 3px;
+    font-size: 0.8rem;
+  }
+  
+  .location-tooltip {
+    max-width: 180px;
+    padding: 5px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .location-tooltip h3 {
+    font-size: 0.95rem;
+  }
+}
+
+/* Fix positioning of close button for mobile */
+.close-map-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 6px 12px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: 1px solid #555;
+  cursor: pointer;
+  z-index: 100;
+  border-radius: 4px;
 }
