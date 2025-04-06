@@ -28,16 +28,14 @@ const LocationView = ({
   
   const [showLoot, setShowLoot] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LootItem | null>(null);
-  const [searchedRecently, setSearchedRecently] = useState(false);
   const [showQuantitySelector, setShowQuantitySelector] = useState(false);
   const [quantitySelectorAction, setQuantitySelectorAction] = useState<'take' | 'use' | 'drop'>('take');
   
   // Get location's loot
   const locationLoot = locationInventories[location.id] || [];
   
-  // Reset search cooldown when changing locations
+  // Reset selections when changing locations
   useEffect(() => {
-    setSearchedRecently(false);
     setShowLoot(false);
     setSelectedItem(null);
   }, [location.id]);
@@ -48,14 +46,23 @@ const LocationView = ({
     const searchEfficiency = 1.0;
     const foundItems = generateLoot(location.id, location.type, searchEfficiency);
     
-    setSearchedRecently(true);
-    setTimeout(() => {
-      setSearchedRecently(false);
-    }, 60000); // Can search again after 1 minute (real time)
-    
     setShowLoot(true);
   };
   
+  // Handle taking all items at once
+  const handleTakeAll = () => {
+    if (locationLoot.length === 0) return;
+    
+    // Move each item to the player's inventory
+    locationLoot.forEach(item => {
+      moveItemToPlayer(location.id, item.id, item.quantity || 1);
+    });
+    
+    // Hide the loot container since all items have been taken
+    setShowLoot(false);
+    setSelectedItem(null);
+  };
+
   const handleTakeItem = () => {
     if (selectedItem) {
       if (selectedItem.stackable && (selectedItem.quantity || 1) > 1) {
@@ -150,6 +157,13 @@ const LocationView = ({
         <div className="found-loot-container">
           <div className="found-loot-header">
             <h3>Найденные предметы</h3>
+            {/* Add Take All button */}
+            <button 
+              className="loot-action-button primary take-all-button"
+              onClick={handleTakeAll}
+            >
+              Забрать все
+            </button>
           </div>
           
           <div className="found-items-list">
@@ -271,11 +285,10 @@ const LocationView = ({
           </>
         )}
         
-        {/* Search button */}
+        {/* Search button - now always available */}
         <button 
           className="game-button"
           onClick={handleSearch}
-          disabled={searchedRecently}
         >
           Осмотреться (30 мин)
         </button>

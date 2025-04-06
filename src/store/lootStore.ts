@@ -375,7 +375,8 @@ export const useLootStore = create<LootState>((set, get) => ({
     const { items, addItemToLocation } = get();
     
     // Number of items to generate based on search efficiency
-    const itemCount = Math.floor(1 + Math.random() * Math.min(3, searchEfficiency));
+    // Increased variability - sometimes find more items!
+    const itemCount = Math.floor(Math.random() * 3 + Math.min(2, searchEfficiency));
     
     const foundItems: LootItem[] = [];
     
