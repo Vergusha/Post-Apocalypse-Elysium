@@ -11,21 +11,22 @@ interface PlayerState {
   eat: (amount: number) => void;
   addItem: (item: string) => void;
   removeItem: (item: string) => void;
+  hasItem: (item: string) => boolean;
 }
 
-export const usePlayerStore = create<PlayerState>((set) => ({
+export const usePlayerStore = create<PlayerState>((set, get) => ({
   name: 'Выживший',
   health: 100,
   hunger: 50,
   radiation: 0,
   // Добавим начальные предметы для тестирования
   inventory: [
-    'weapon:pistol', 
-    'ammo:pistol', 
-    'medical:medkit', 
-    'food:canned-meat', 
-    'food:water',
-    'tool:flashlight'
+    'pistol', 
+    'pistol-ammo', 
+    'medkit', 
+    'canned-meat', 
+    'water',
+    'flashlight'
   ],
   setName: (name) => set({ name }),
   takeDamage: (amount) =>
@@ -34,10 +35,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
     set((state) => ({ hunger: Math.max(state.hunger - amount, 0) })),
   addItem: (item) =>
     set((state) => ({ inventory: [...state.inventory, item] })),
-  removeItem: (item) =>
+  removeItem: (itemId) =>
     set((state) => ({ 
-      inventory: state.inventory.filter((i, index) => 
-        index !== state.inventory.indexOf(item)
-      ) 
+      inventory: state.inventory.filter((id) => id !== itemId) 
     })),
+  hasItem: (itemId) => get().inventory.includes(itemId)
 }));

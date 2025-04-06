@@ -4,6 +4,7 @@ import { useLocationStore } from '../store/locationStore';
 import { useTimeStore, formatTime, formatDayTime } from '../store/timeStore';
 import Map from '../components/Map';
 import Inventory from '../components/Inventory';
+import LocationView from '../components/LocationView';
 import '../styles/GameScreen.css';
 
 const GameScreen = () => {
@@ -15,7 +16,18 @@ const GameScreen = () => {
   // Time state from the time store
   const { day, hour, minute, dayPhase, advanceTime, paused, togglePause } = useTimeStore();
   
-  const currentLocation = locations.find(loc => loc.id === currentLocationId);
+  const currentLocation = locations.find(loc => loc.id === currentLocationId) || {
+    id: 'unknown',
+    name: 'Неизвестно',
+    description: 'Вы потерялись...',
+    type: 'ruins',
+    accessible: true,
+    dangerLevel: 0,
+    discovered: true,
+    x: 0,
+    y: 0
+  };
+  
   const isInShelter = currentLocationId === 'home';
 
   // Real-time clock that advances game time
@@ -137,54 +149,17 @@ const GameScreen = () => {
             </button>
           </div>
         ) : (
-          <div className="location-view">
-            <h2>{currentLocation?.name}</h2>
-            <p>{currentLocation?.description}</p>
-            
-            <div className="location-actions">
-              <button 
-                className="game-button"
-                onClick={() => setShowMap(true)}
-              >
-                Открыть карту
-              </button>
-              
-              {/* Кнопка инвентаря отображается только в убежище */}
-              {isInShelter && (
-                <button 
-                  className="game-button"
-                  onClick={() => setShowInventory(true)}
-                >
-                  Открыть инвентарь
-                </button>
-              )}
-              
-              {/* Другие действия, специфичные для убежища */}
-              {isInShelter && (
-                <>
-                  <button 
-                    className="game-button"
-                    onClick={() => {
-                      // Rest for 8 hours
-                      advanceTime(8 * 60); 
-                      // In the future, this would also restore health, reduce hunger, etc.
-                    }}
-                  >
-                    Отдохнуть (8 часов)
-                  </button>
-                  <button className="game-button">Починить снаряжение</button>
-                </>
-              )}
-              
-              {/* Example of an action that takes time */}
-              <button 
-                className="game-button"
-                onClick={() => advanceTime(30)} // Takes 30 minutes
-              >
-                Осмотреться (30 мин)
-              </button>
-            </div>
-          </div>
+          <LocationView 
+            location={{
+              id: currentLocation.id,
+              name: currentLocation.name,
+              description: currentLocation.description,
+              type: currentLocation.type
+            }}
+            onOpenMap={() => setShowMap(true)}
+            onOpenInventory={() => setShowInventory(true)}
+            isInShelter={isInShelter}
+          />
         )}
       </div>
       
