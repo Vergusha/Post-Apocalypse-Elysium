@@ -148,9 +148,17 @@
 }
 
 .route-path {
-  stroke: rgba(255, 255, 255, 0.6);
-  stroke-width: 2px;
-  stroke-dasharray: 5, 5;
+  stroke: rgba(255, 255, 255, 0.4);
+  stroke-width: 1.5px;
+  stroke-dasharray: 4, 4;
+  transition: all 0.3s ease;
+}
+
+.route-path.route-active {
+  stroke: rgba(255, 126, 0, 0.8);
+  stroke-width: 2.5px;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 3px rgba(255, 126, 0, 0.5));
 }
 
 .location-tooltip {
@@ -239,6 +247,10 @@
   background-color: rgb(139, 0, 0);
 }
 
+.legend-icon.hospital {
+  background-color: rgb(255, 0, 0);
+}
+
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 126, 0, 0.7);
@@ -306,4 +318,12 @@
   cursor: pointer;
   z-index: 100;
   border-radius: 4px;
+}
+
+/* Distance text style */
+.distance-text {
+  color: #aaa;
+  font-size: 0.9em;
+  margin-top: 5px;
+  font-style: italic;
 }

@@ -57,7 +57,7 @@ const GameScreen = () => {
     return () => clearInterval(gameUpdateInterval);
   }, [paused, hunger, thirst, increaseHunger, increaseThirst, takeDamage]);
 
-  // Handle location selection and travel costs
+  // Handle location selection with improved travel cost calculation
   const handleLocationSelect = (locationId: string) => {
     // Time cost for travel between locations
     const startLoc = locations.find(loc => loc.id === currentLocationId);
@@ -69,14 +69,41 @@ const GameScreen = () => {
         Math.pow(startLoc.x - endLoc.x, 2) + Math.pow(startLoc.y - endLoc.y, 2)
       );
       
-      // Convert distance to time and survival costs
-      const travelTime = Math.round(distance * 5); // 5 minutes per distance unit
+      // Calculate travel costs based on location types
+      // Travel through forest is slower than on roads
+      const baseSpeed = 5; // minutes per distance unit
+      let speedModifier = 1.0;
+      
+      // Adjust speed based on terrain and danger level
+      if (endLoc.type === 'forest') {
+        speedModifier *= 1.5; // Forest is slower to traverse
+      } else if (endLoc.type === 'city' || endLoc.type === 'ruins') {
+        speedModifier *= 1.2; // Urban areas require more careful movement
+      }
+      
+      // Higher danger means more careful (slower) travel
+      speedModifier *= (1 + endLoc.dangerLevel * 0.1);
+      
+      // Calculate final travel time
+      const travelTime = Math.round(distance * baseSpeed * speedModifier);
       const travelDistanceKm = distance * 0.5; // Approximate kilometers
       
       // Apply travel costs
       advanceTime(travelTime);
       increaseHunger(travelDistanceKm * SURVIVAL_RATES.HUNGER_PER_KM);
       increaseThirst(travelDistanceKm * SURVIVAL_RATES.THIRST_PER_KM);
+      
+      // Random chance to discover nearby locations when traveling
+      const nearbyLocations = locations.filter(loc => 
+        !loc.discovered && 
+        Math.sqrt(Math.pow(endLoc.x - loc.x, 2) + Math.pow(endLoc.y - loc.y, 2)) < 15
+      );
+      
+      if (nearbyLocations.length > 0 && Math.random() < 0.3) {
+        // 30% chance to discover a nearby location
+        const randomLocation = nearbyLocations[Math.floor(Math.random() * nearbyLocations.length)];
+        useLocationStore.getState().discoverLocation(randomLocation.id);
+      }
     }
     
     setCurrentLocation(locationId);
