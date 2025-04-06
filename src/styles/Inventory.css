@@ -158,6 +158,12 @@
   font-weight: bold;
 }
 
+.quantity-badge {
+  font-size: 0.9rem;
+  color: #999;
+  font-weight: normal;
+}
+
 .item-condition-indicator {
   position: absolute;
   bottom: 3px;

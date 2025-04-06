@@ -66,6 +66,7 @@
   width: 100px;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .found-item:hover {
@@ -233,6 +234,24 @@
 
 .stat-value {
   color: #eee;
+}
+
+.item-quantity {
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 0.7rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.item-quantity-badge {
+  font-size: 0.8rem;
+  color: #999;
+  margin-left: 5px;
 }
 
 @keyframes fadeIn {

@@ -19,7 +19,8 @@ export interface LootItem {
   rarity: number; // 1-5, with 5 being the rarest
   weight: number; // For inventory management
   usable: boolean; // Can be used directly
-  stackable?: boolean; // Can stack multiple in one inventory slot
+  stackable: boolean; // Can stack multiple in one inventory slot
+  quantity?: number; // For stackable items
   condition?: number; // 0-100%, only for applicable items
 }
 
@@ -42,8 +43,8 @@ interface LootState {
   
   // Actions
   addItemToLocation: (locationId: string, itemId: string) => void;
-  removeItemFromLocation: (locationId: string, itemId: string) => void;
-  moveItemToPlayer: (locationId: string, itemId: string) => void;
+  removeItemFromLocation: (locationId: string, itemId: string, quantity?: number) => void;
+  moveItemToPlayer: (locationId: string, itemId: string, quantity?: number) => void;
   generateLoot: (locationId: string, locationType: string, searchEfficiency: number) => LootItem[];
   clearLocationLoot: (locationId: string) => void;
 }
@@ -292,16 +293,63 @@ export const useLootStore = create<LootState>((set, get) => ({
     if (!item) return state;
     
     const currentInventory = state.locationInventories[locationId] || [];
+    
+    // Check if this is a stackable item that already exists in the location
+    if (item.stackable) {
+      const existingItemIndex = currentInventory.findIndex(
+        i => i.id === itemId && i.stackable
+      );
+      
+      if (existingItemIndex >= 0) {
+        // Stack with existing item
+        const updatedInventory = [...currentInventory];
+        const existingItem = updatedInventory[existingItemIndex];
+        updatedInventory[existingItemIndex] = {
+          ...existingItem,
+          quantity: (existingItem.quantity || 1) + 1
+        };
+        
+        return {
+          locationInventories: {
+            ...state.locationInventories,
+            [locationId]: updatedInventory
+          }
+        };
+      }
+    }
+    
+    // Add as a new item
+    const newItem = item.stackable 
+      ? { ...item, quantity: 1 } 
+      : item;
+    
     return {
       locationInventories: {
         ...state.locationInventories,
-        [locationId]: [...currentInventory, item]
+        [locationId]: [...currentInventory, newItem]
       }
     };
   }),
   
-  removeItemFromLocation: (locationId, itemId) => set((state) => {
+  removeItemFromLocation: (locationId, itemId, quantity = 1) => set((state) => {
     const currentInventory = state.locationInventories[locationId] || [];
+    const itemToRemove = currentInventory.find(item => item.id === itemId);
+    
+    if (!itemToRemove) return state;
+    
+    // If it's a stackable item with quantity > 1, just decrease the quantity
+    if (itemToRemove.stackable && (itemToRemove.quantity || 0) > quantity) {
+      return {
+        locationInventories: {
+          ...state.locationInventories,
+          [locationId]: currentInventory.map(item => 
+            item.id === itemId ? { ...item, quantity: (item.quantity || 1) - quantity } : item
+          )
+        }
+      };
+    }
+    
+    // Otherwise remove the item completely
     return {
       locationInventories: {
         ...state.locationInventories,
@@ -310,12 +358,15 @@ export const useLootStore = create<LootState>((set, get) => ({
     };
   }),
   
-  moveItemToPlayer: (locationId, itemId) => {
-    const { removeItemFromLocation } = get();
+  moveItemToPlayer: (locationId, itemId, quantity = 1) => {
+    const { removeItemFromLocation, items } = get();
     const addItem = usePlayerStore.getState().addItem;
+    const item = items[itemId];
     
-    addItem(itemId);
-    removeItemFromLocation(locationId, itemId);
+    if (item) {
+      addItem(itemId, quantity);
+      removeItemFromLocation(locationId, itemId, quantity);
+    }
   },
   
   generateLoot: (locationId, locationType, searchEfficiency = 1) => {

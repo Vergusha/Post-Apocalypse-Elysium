@@ -1,0 +1,153 @@
+.quantity-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.quantity-selector-container {
+  width: 90%;
+  max-width: 350px;
+  background-color: rgba(40, 40, 40, 0.95);
+  border: 1px solid #555;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  animation: fade-in 0.2s ease;
+}
+
+.quantity-selector-header {
+  padding: 15px;
+  border-bottom: 1px solid #444;
+}
+
+.quantity-selector-header h3 {
+  color: #ff7e00;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.quantity-selector-content {
+  padding: 20px;
+}
+
+.quantity-label {
+  color: #ccc;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.quantity-button {
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(60, 60, 60, 0.8);
+  border: 1px solid #555;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.quantity-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantity-button:hover:not(:disabled) {
+  background-color: rgba(80, 80, 80, 0.8);
+}
+
+.quantity-input {
+  width: 80px;
+  height: 40px;
+  text-align: center;
+  background-color: rgba(30, 30, 30, 0.8);
+  border: 1px solid #555;
+  color: #fff;
+  font-size: 1.2rem;
+  border-radius: 4px;
+}
+
+.quantity-input::-webkit-inner-spin-button,
+.quantity-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.quantity-max {
+  color: #888;
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.quantity-actions {
+  display: flex;
+  border-top: 1px solid #444;
+  padding: 15px;
+  gap: 10px;
+}
+
+.quantity-action-button {
+  flex: 1;
+  padding: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.quantity-action-button.confirm {
+  background-color: rgba(60, 120, 60, 0.6);
+  border: 1px solid #3c783c;
+  color: white;
+}
+
+.quantity-action-button.confirm:hover {
+  background-color: rgba(70, 140, 70, 0.8);
+}
+
+.quantity-action-button.cancel {
+  background-color: rgba(60, 60, 60, 0.6);
+  border: 1px solid #555;
+  color: white;
+}
+
+.quantity-action-button.cancel:hover {
+  background-color: rgba(80, 80, 80, 0.8);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .quantity-selector-container {
+    width: 85%;
+  }
+}

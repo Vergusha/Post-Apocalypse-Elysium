@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePlayerStore } from '../store/playerStore';
-import { useLootStore, LootItem } from '../store/lootStore';
+import { useLootStore } from '../store/lootStore';
+import QuantitySelector from './QuantitySelector';
 import '../styles/Inventory.css';
 
 interface InventoryProps {
@@ -13,16 +14,30 @@ const Inventory = ({ onClose }: InventoryProps) => {
   const inventory = usePlayerStore((state) => state.inventory);
   const removeItem = usePlayerStore((state) => state.removeItem);
   const items = useLootStore((state) => state.items);
-  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<InventoryTab>('all');
+  const [showQuantitySelector, setShowQuantitySelector] = useState(false);
+  const [quantitySelectorAction, setQuantitySelectorAction] = useState<'use' | 'drop'>('use');
 
-  // Get all player items with their details
+  // Get the selected item details
+  const selectedInventoryItem = inventory.find(item => item.id === selectedItemId);
+  const selectedItem = selectedInventoryItem ? items[selectedInventoryItem.id] : null;
+  
+  // Get all player items with their details and quantities
   const playerItems = inventory
-    .map(itemId => items[itemId])
-    .filter(Boolean) as LootItem[];
+    .map(invItem => {
+      const itemDetails = items[invItem.id];
+      if (!itemDetails) return null;
+      
+      return {
+        ...itemDetails,
+        quantity: invItem.quantity || 1
+      };
+    })
+    .filter(Boolean) as (typeof items[string] & { quantity: number })[];
 
   // Group items by category
-  const groupedItems: Record<string, LootItem[]> = {};
+  const groupedItems: Record<string, (typeof items[string] & { quantity: number })[]> = {};
   
   playerItems.forEach(item => {
     if (!groupedItems[item.category]) {
@@ -41,22 +56,50 @@ const Inventory = ({ onClose }: InventoryProps) => {
   });
 
   const handleUseItem = () => {
-    if (selectedItem) {
-      const item = items[selectedItem];
-      if (item && item.usable) {
-        console.log(`Using item: ${item.name}`);
-        // In the future, implement actual item use effects here
-        removeItem(selectedItem);
-        setSelectedItem(null);
+    if (selectedItemId && selectedItem?.usable) {
+      const inventoryItem = inventory.find(item => item.id === selectedItemId);
+      if (inventoryItem && inventoryItem.quantity && inventoryItem.quantity > 1) {
+        // Show quantity selector for multiple items
+        setQuantitySelectorAction('use');
+        setShowQuantitySelector(true);
+      } else {
+        // Use single item directly
+        removeItem(selectedItemId, 1);
+        setSelectedItemId(null);
       }
     }
   };
 
   const handleDropItem = () => {
-    if (selectedItem) {
-      removeItem(selectedItem);
-      setSelectedItem(null);
+    if (selectedItemId) {
+      const inventoryItem = inventory.find(item => item.id === selectedItemId);
+      if (inventoryItem && inventoryItem.quantity && inventoryItem.quantity > 1) {
+        // Show quantity selector for multiple items
+        setQuantitySelectorAction('drop');
+        setShowQuantitySelector(true);
+      } else {
+        // Drop single item directly
+        removeItem(selectedItemId, 1);
+        setSelectedItemId(null);
+      }
     }
+  };
+  
+  const handleQuantityConfirm = (quantity: number) => {
+    if (!selectedItemId) return;
+    
+    // Perform the action with the selected quantity
+    if (quantitySelectorAction === 'use') {
+      // In a real game, this would have different effects based on the item
+      console.log(`Using ${quantity} of ${selectedItem?.name}`);
+    }
+    
+    // Remove the items from inventory
+    removeItem(selectedItemId, quantity);
+    
+    // Close the selector and clear selection
+    setShowQuantitySelector(false);
+    setSelectedItemId(null);
   };
 
   // Helper to get condition class
@@ -124,46 +167,41 @@ const Inventory = ({ onClose }: InventoryProps) => {
                     </div>
                     
                     <div className="items-list">
-                      {items.map((item) => {
-                        // Group similar items (not implemented yet, just a placeholder)
-                        const quantity = 1;
-                        
-                        return (
-                          <div key={item.id} className="item-slot">
-                            <div 
-                              className={`inventory-item ${selectedItem === item.id ? 'selected' : ''}`}
-                              onClick={() => setSelectedItem(item.id)}
-                            >
-                              <div className="item-icon">{getItemIcon(item.category)}</div>
-                              <div className="item-name">{item.name}</div>
-                              
-                              {/* Item condition indicator */}
-                              {item.condition !== undefined && (
-                                <div className="item-condition-indicator">
-                                  <div 
-                                    className={`condition-value ${getConditionClass(item.condition)}`} 
-                                    style={{ width: `${item.condition}%` }}
-                                  ></div>
-                                </div>
-                              )}
-                              
-                              {/* Rarity stars */}
-                              {item.rarity > 1 && (
-                                <div className="item-rarity">
-                                  {'★'.repeat(item.rarity - 1)}
-                                </div>
-                              )}
-                              
-                              {/* Quantity badge (for future use) */}
-                              {quantity > 1 && (
-                                <div className="item-quantity">{quantity}</div>
-                              )}
-                            </div>
+                      {items.map((item) => (
+                        <div key={item.id} className="item-slot">
+                          <div 
+                            className={`inventory-item ${selectedItemId === item.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedItemId(item.id)}
+                          >
+                            <div className="item-icon">{getItemIcon(item.category)}</div>
+                            <div className="item-name">{item.name}</div>
+                            
+                            {/* Show quantity for stacked items */}
+                            {item.quantity > 1 && (
+                              <div className="item-quantity">{item.quantity}</div>
+                            )}
+                            
+                            {/* Item condition indicator */}
+                            {item.condition !== undefined && (
+                              <div className="item-condition-indicator">
+                                <div 
+                                  className={`condition-value ${getConditionClass(item.condition)}`} 
+                                  style={{ width: `${item.condition}%` }}
+                                ></div>
+                              </div>
+                            )}
+                            
+                            {/* Rarity stars */}
+                            {item.rarity > 1 && (
+                              <div className="item-rarity">
+                                {'★'.repeat(item.rarity - 1)}
+                              </div>
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                       
-                      {/* Add empty slots to fill the row - makes UI feel more like a traditional inventory */}
+                      {/* Add empty slots to fill the row */}
                       {[...Array(Math.max(0, 5 - items.length))].map((_, index) => (
                         <div key={`empty-${category}-${index}`} className="item-slot"></div>
                       ))}
@@ -175,52 +213,72 @@ const Inventory = ({ onClose }: InventoryProps) => {
           )}
         </div>
         
-        {selectedItem && items[selectedItem] && (
+        {selectedItemId && selectedItem && (
           <div className="item-details">
             <div className="item-details-icon">
-              {getItemIcon(items[selectedItem].category)}
+              {getItemIcon(selectedItem.category)}
             </div>
             
             <div className="item-details-content">
-              <h3>{items[selectedItem].name}</h3>
-              <div className="item-description">{items[selectedItem].description}</div>
+              <h3>
+                {selectedItem.name}
+                {selectedInventoryItem?.quantity && selectedInventoryItem.quantity > 1 && (
+                  <span className="quantity-badge"> x{selectedInventoryItem.quantity}</span>
+                )}
+              </h3>
+              <div className="item-description">{selectedItem.description}</div>
               
               <div className="item-stats">
                 <div className="item-stat">
                   <span className="stat-label">Категория</span>
-                  <span className="stat-value">{getCategoryName(items[selectedItem].category)}</span>
+                  <span className="stat-value">{getCategoryName(selectedItem.category)}</span>
                 </div>
                 
                 <div className="item-stat">
                   <span className="stat-label">Вес</span>
-                  <span className="stat-value">{items[selectedItem].weight} кг</span>
+                  <span className="stat-value">
+                    {selectedInventoryItem?.quantity && selectedInventoryItem.quantity > 1 
+                      ? `${selectedItem.weight * selectedInventoryItem.quantity} кг (${selectedItem.weight} x ${selectedInventoryItem.quantity})`
+                      : `${selectedItem.weight} кг`}
+                  </span>
                 </div>
                 
-                {items[selectedItem].condition !== undefined && (
+                {selectedItem.condition !== undefined && (
                   <div className="item-stat">
                     <span className="stat-label">Состояние</span>
-                    <span className="stat-value">{items[selectedItem].condition}%</span>
+                    <span className="stat-value">{selectedItem.condition}%</span>
                   </div>
                 )}
                 
                 <div className="item-stat">
                   <span className="stat-label">Редкость</span>
-                  <span className="stat-value">{'★'.repeat(items[selectedItem].rarity)}</span>
+                  <span className="stat-value">{'★'.repeat(selectedItem.rarity)}</span>
                 </div>
               </div>
               
               <div className="item-actions">
-                {items[selectedItem].usable && (
+                {selectedItem.usable && (
                   <button className="item-action-button use-button" onClick={handleUseItem}>
-                    Использовать
+                    Использовать {selectedInventoryItem?.quantity && selectedInventoryItem.quantity > 1 ? '...' : ''}
                   </button>
                 )}
                 <button className="item-action-button drop-button" onClick={handleDropItem}>
-                  Выбросить
+                  Выбросить {selectedInventoryItem?.quantity && selectedInventoryItem.quantity > 1 ? '...' : ''}
                 </button>
               </div>
             </div>
           </div>
+        )}
+        
+        {/* Quantity Selector */}
+        {showQuantitySelector && selectedItemId && selectedItem && selectedInventoryItem && (
+          <QuantitySelector 
+            maxQuantity={selectedInventoryItem.quantity || 1}
+            onConfirm={handleQuantityConfirm}
+            onCancel={() => setShowQuantitySelector(false)}
+            itemName={selectedItem.name}
+            action={quantitySelectorAction}
+          />
         )}
       </div>
     </div>

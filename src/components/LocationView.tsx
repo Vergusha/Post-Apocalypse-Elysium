@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTimeStore } from '../store/timeStore';
 import { usePlayerStore } from '../store/playerStore';
 import { useLootStore, LootItem } from '../store/lootStore';
+import QuantitySelector from './QuantitySelector';
 import '../styles/LocationView.css';
 
 interface LocationViewProps {
@@ -18,12 +19,13 @@ interface LocationViewProps {
 
 const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: LocationViewProps) => {
   const { advanceTime } = useTimeStore();
-  const addItem = usePlayerStore((state) => state.addItem);
-  const { locationInventories, generateLoot, removeItemFromLocation } = useLootStore();
+  const { locationInventories, generateLoot, removeItemFromLocation, moveItemToPlayer } = useLootStore();
   
   const [showLoot, setShowLoot] = useState(false);
   const [selectedItem, setSelectedItem] = useState<LootItem | null>(null);
   const [searchedRecently, setSearchedRecently] = useState(false);
+  const [showQuantitySelector, setShowQuantitySelector] = useState(false);
+  const [quantitySelectorAction, setQuantitySelectorAction] = useState<'take' | 'use' | 'drop'>('take');
   
   // Get location's loot
   const locationLoot = locationInventories[location.id] || [];
@@ -37,58 +39,76 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
   
   // Handle search action
   const handleSearch = () => {
-    // Advance time when searching
     advanceTime(30); // 30 minutes
-    
-    // User's search efficiency (could be based on skills in the future)
     const searchEfficiency = 1.0;
-    
-    // Generate loot for this location
     const foundItems = generateLoot(location.id, location.type, searchEfficiency);
     
-    // Set search cooldown
     setSearchedRecently(true);
     setTimeout(() => {
       setSearchedRecently(false);
     }, 60000); // Can search again after 1 minute (real time)
     
-    // Show found items
     setShowLoot(true);
   };
   
   const handleTakeItem = () => {
     if (selectedItem) {
-      // Add to player inventory - here we're simplifying by just using the item ID
-      addItem(selectedItem.id);
-      
-      // Remove from location inventory
-      removeItemFromLocation(location.id, selectedItem.id);
-      
-      // Clear selection
-      setSelectedItem(null);
-      
-      // If no more items, hide the loot container
-      if (locationLoot.length <= 1) {
-        setShowLoot(false);
+      if (selectedItem.stackable && (selectedItem.quantity || 1) > 1) {
+        // Show quantity selector for stackable items
+        setQuantitySelectorAction('take');
+        setShowQuantitySelector(true);
+      } else {
+        // Take single item directly
+        moveItemToPlayer(location.id, selectedItem.id, 1);
+        setSelectedItem(null);
+        
+        if (locationLoot.length <= 1) {
+          setShowLoot(false);
+        }
       }
     }
   };
   
   const handleUseItem = () => {
     if (selectedItem && selectedItem.usable) {
-      // In a real implementation, this would have different effects based on the item
-      console.log(`Using item: ${selectedItem.name}`);
-      
-      // Remove from location after using
-      removeItemFromLocation(location.id, selectedItem.id);
-      
-      // Clear selection
-      setSelectedItem(null);
-      
-      // If no more items, hide the loot container
-      if (locationLoot.length <= 1) {
-        setShowLoot(false);
+      if (selectedItem.stackable && (selectedItem.quantity || 1) > 1) {
+        // Show quantity selector for stackable items
+        setQuantitySelectorAction('use');
+        setShowQuantitySelector(true);
+      } else {
+        // Use single item directly
+        removeItemFromLocation(location.id, selectedItem.id);
+        setSelectedItem(null);
+        
+        if (locationLoot.length <= 1) {
+          setShowLoot(false);
+        }
       }
+    }
+  };
+  
+  const handleQuantityConfirm = (quantity: number) => {
+    if (!selectedItem) return;
+    
+    switch (quantitySelectorAction) {
+      case 'take':
+        moveItemToPlayer(location.id, selectedItem.id, quantity);
+        break;
+      case 'use':
+        // Use multiple items
+        removeItemFromLocation(location.id, selectedItem.id, quantity);
+        break;
+      case 'drop':
+        // Not applicable in this component, but included for future use
+        break;
+    }
+    
+    setShowQuantitySelector(false);
+    setSelectedItem(null);
+    
+    // Check if we need to hide the loot container
+    if (locationLoot.length <= 1) {
+      setShowLoot(false);
     }
   };
   
@@ -136,6 +156,12 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
               >
                 <div className="item-icon">{getItemIcon(item.category)}</div>
                 <div className="item-name">{item.name}</div>
+                
+                {/* Show quantity for stackable items */}
+                {item.stackable && item.quantity && item.quantity > 1 && (
+                  <div className="item-quantity">{item.quantity}</div>
+                )}
+                
                 {item.condition !== undefined && (
                   <div className="item-condition">
                     <div 
@@ -151,11 +177,11 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
           {selectedItem && (
             <div className="loot-actions">
               <button className="loot-action-button primary" onClick={handleTakeItem}>
-                Взять
+                Взять {selectedItem.stackable && (selectedItem.quantity || 0) > 1 ? "..." : ""}
               </button>
               {selectedItem.usable && (
                 <button className="loot-action-button" onClick={handleUseItem}>
-                  Использовать
+                  Использовать {selectedItem.stackable && (selectedItem.quantity || 0) > 1 ? "..." : ""}
                 </button>
               )}
               <button 
@@ -174,6 +200,9 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
         <div className="item-details-modal">
           <div className="item-details-header">
             <span>{selectedItem.name}</span>
+            {selectedItem.stackable && selectedItem.quantity && selectedItem.quantity > 1 && (
+              <span className="item-quantity-badge">x{selectedItem.quantity}</span>
+            )}
             <button className="close-details" onClick={() => setSelectedItem(null)}>×</button>
           </div>
           
@@ -186,7 +215,11 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
             </div>
             <div className="item-stat">
               <div className="stat-label">Вес:</div>
-              <div className="stat-value">{selectedItem.weight} кг</div>
+              <div className="stat-value">
+                {selectedItem.stackable && selectedItem.quantity ? 
+                  `${selectedItem.weight * selectedItem.quantity} кг (${selectedItem.weight} x ${selectedItem.quantity})` : 
+                  `${selectedItem.weight} кг`}
+              </div>
             </div>
             {selectedItem.condition !== undefined && (
               <div className="item-stat">
@@ -242,6 +275,17 @@ const LocationView = ({ location, onOpenMap, onOpenInventory, isInShelter }: Loc
           Осмотреться (30 мин)
         </button>
       </div>
+      
+      {/* Quantity Selector */}
+      {showQuantitySelector && selectedItem && (
+        <QuantitySelector 
+          maxQuantity={selectedItem.quantity || 1}
+          onConfirm={handleQuantityConfirm}
+          onCancel={() => setShowQuantitySelector(false)}
+          itemName={selectedItem.name}
+          action={quantitySelectorAction}
+        />
+      )}
     </div>
   );
 };
