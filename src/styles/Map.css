@@ -6,6 +6,23 @@
   user-select: none;
 }
 
+/* Day phase styling for the map */
+.map-container.morning .map-background {
+  filter: sepia(20%) contrast(110%) brightness(1.1) hue-rotate(10deg);
+}
+
+.map-container.day .map-background {
+  filter: sepia(20%) contrast(110%);
+}
+
+.map-container.evening .map-background {
+  filter: sepia(30%) contrast(110%) brightness(0.9) hue-rotate(-10deg);
+}
+
+.map-container.night .map-background {
+  filter: sepia(40%) brightness(0.6) contrast(120%) saturate(0.8) hue-rotate(180deg);
+}
+
 .map-background {
   position: relative;
   width: 100%;
@@ -14,6 +31,7 @@
   background-size: cover;
   background-position: center;
   filter: sepia(20%) contrast(110%);
+  transition: filter 1s ease;
 }
 
 .location-marker {

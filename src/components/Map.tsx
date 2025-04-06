@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTimeStore } from '../store/timeStore';
 import '../styles/Map.css';
 
 export interface Location {
@@ -21,9 +22,10 @@ interface MapProps {
 
 const Map = ({ locations, currentLocation, onLocationSelect }: MapProps) => {
   const [hoveredLocation, setHoveredLocation] = useState<Location | null>(null);
+  const { dayPhase } = useTimeStore(); // Get the current day phase
   
   return (
-    <div className="map-container">
+    <div className={`map-container ${dayPhase}`}>
       <div className="map-background">
         {locations.map((location) => (
           <div 

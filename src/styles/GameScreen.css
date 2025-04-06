@@ -65,6 +65,53 @@
   background-color: #7e429b;
 }
 
+/* Time display styles */
+.time-display {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: #ccc;
+  font-size: 1rem;
+  padding: 0 10px;
+}
+
+.time-icon {
+  margin-right: 8px;
+  color: #ff7e00;
+  font-size: 1.1rem;
+}
+
+.time-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-value {
+  font-weight: bold;
+  color: #fff;
+}
+
+.day-phase {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.day-phase.morning {
+  color: #ffd700;
+}
+
+.day-phase.day {
+  color: #ffff99;
+}
+
+.day-phase.evening {
+  color: #ff7f50;
+}
+
+.day-phase.night {
+  color: #6495ed;
+}
+
 .game-area {
   flex: 1;
   position: relative;
